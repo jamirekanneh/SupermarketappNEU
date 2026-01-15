@@ -10,33 +10,61 @@ class SignupScreen extends StatefulWidget {
 }
 
 class _SignupScreenState extends State<SignupScreen> {
-  final _email = TextEditingController();
-  final _pass = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _passCtrl = TextEditingController();
+  final _confirmCtrl = TextEditingController();
+
   bool _loading = false;
+  bool _obscure = true;
+
+  @override
+  void dispose() {
+    _emailCtrl.dispose();
+    _passCtrl.dispose();
+    _confirmCtrl.dispose();
+    super.dispose();
+  }
 
   Future<void> _signup() async {
+    final email = _emailCtrl.text.trim();
+    final pass = _passCtrl.text.trim();
+    final confirm = _confirmCtrl.text.trim();
+
+    if (email.isEmpty || !email.contains('@')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Enter a valid email.")),
+      );
+      return;
+    }
+    if (pass.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Password must be at least 6 characters.")),
+      );
+      return;
+    }
+    if (pass != confirm) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Passwords do not match.")),
+      );
+      return;
+    }
+
     setState(() => _loading = true);
+
     try {
       await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: _email.text.trim(),
-        password: _pass.text.trim(),
+        email: email,
+        password: pass,
       );
-      // ✅ user is logged in after signup -> AuthGate switches to MainShell
+      // ✅ User is signed in after signup. AuthGate will take over.
       if (mounted) Navigator.pop(context);
     } on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message ?? 'Signup failed')),
+        SnackBar(content: Text(e.message ?? "Signup failed")),
       );
     } finally {
       if (mounted) setState(() => _loading = false);
     }
-  }
-
-  @override
-  void dispose() {
-    _email.dispose();
-    _pass.dispose();
-    super.dispose();
   }
 
   @override
@@ -46,28 +74,56 @@ class _SignupScreenState extends State<SignupScreen> {
       body: Center(
         child: Container(
           width: 360,
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.all(20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
-                controller: _email,
+                controller: _emailCtrl,
                 keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(labelText: "Email"),
+                decoration: const InputDecoration(
+                  labelText: "Email",
+                  prefixIcon: Icon(Icons.email_outlined),
+                ),
               ),
+              const SizedBox(height: 12),
+
               TextField(
-                controller: _pass,
-                obscureText: true,
-                decoration: const InputDecoration(labelText: "Password"),
+                controller: _passCtrl,
+                obscureText: _obscure,
+                decoration: InputDecoration(
+                  labelText: "Password",
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  suffixIcon: IconButton(
+                    onPressed: () => setState(() => _obscure = !_obscure),
+                    icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
+                  ),
+                ),
               ),
+              const SizedBox(height: 12),
+
+              TextField(
+                controller: _confirmCtrl,
+                obscureText: _obscure,
+                decoration: const InputDecoration(
+                  labelText: "Confirm Password",
+                  prefixIcon: Icon(Icons.lock_outline),
+                ),
+              ),
+
               const SizedBox(height: 18),
+
               SizedBox(
                 width: double.infinity,
                 height: 44,
                 child: ElevatedButton(
                   onPressed: _loading ? null : _signup,
                   child: _loading
-                      ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
                       : const Text("SIGN UP"),
                 ),
               ),
@@ -78,3 +134,4 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 }
+
