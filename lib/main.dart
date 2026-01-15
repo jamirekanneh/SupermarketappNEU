@@ -6,11 +6,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'providers/cart_provider.dart';
 import 'providers/orders_provider.dart';
 import 'providers/cards_provider.dart';
-import 'screens/main_shell.dart';
 
-// ✅ Add these two screens (create files below)
+import 'screens/main_shell.dart';
 import 'screens/login_screen.dart';
 import 'screens/signup_screen.dart';
+import 'screens/forgot_password_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,16 +47,17 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: Colors.white,
         colorSchemeSeed: const Color(0xFF2F64FF),
       ),
-      home: const AuthGate(), // ✅ this is the “link”
+      home: const AuthGate(),
       routes: {
         LoginScreen.routeName: (_) => const LoginScreen(),
         SignupScreen.routeName: (_) => const SignupScreen(),
+        ForgotPasswordScreen.routeName: (_) => const ForgotPasswordScreen(),
       },
     );
   }
 }
 
-/// ✅ Decides which screen to show
+/// ✅ Shows MainShell if logged in, otherwise Login
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
 
@@ -70,14 +71,11 @@ class AuthGate extends StatelessWidget {
             body: Center(child: CircularProgressIndicator()),
           );
         }
-
-        // Logged in -> go to your existing app
         if (snap.data != null) return const MainShell();
-
-        // Not logged in -> show login
         return const LoginScreen();
       },
     );
   }
 }
+
 
